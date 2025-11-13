@@ -1,0 +1,16 @@
+{
+  "name": "post-random",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx functions-framework --target=postRandom --port=8080"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.4.0",
+    "firebase-admin": "^12.5.0",
+    "telegraf": "^4.16.3",
+    "@napi-rs/canvas": "^0.1.54"
+  }
+}
+

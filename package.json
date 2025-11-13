@@ -1,0 +1,22 @@
+{
+  "name": "ethnopharma-starter",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js",
+    "cards:activate": "mv data/buds_master_images_direct.json data/_backup_buds_master_images_direct.json && mv data/buds_master_images_direct.v2.json data/buds_master_images_direct.json",
+    "cards:check": "echo \"cards:check: v1 scripts are deprecated\" && exit 0"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "canvas": "^2.11.2",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^13.5.0",
+    "node-cron": "^3.0.3",
+    "openai": "^6.5.0",
+    "slugify": "^1.6.6",
+    "telegraf": "^4.16.3"
+  }
+}
