@@ -24,7 +24,7 @@ function isTrue(value) {
 }
 
 function isNotFalse(value) {
-  if (!value) return true; // по умолчанию: включено
+  if (!value) return true;
   const v = String(value).trim().toLowerCase();
   return v !== "false" && v !== "0" && v !== "no" && v !== "off";
 }
@@ -34,12 +34,12 @@ const RAW_CHANNELS = [
   {
     id: process.env.CHANNEL_ID_RU,
     lang: "ru",
-    enabled: isNotFalse(process.env.POST_TO_RU), // если не задано — true
+    enabled: isNotFalse(process.env.POST_TO_RU),
   },
   {
     id: process.env.CHANNEL_ID_EN,
     lang: "en",
-    enabled: isTrue(process.env.POST_TO_EN), // включится, только если явно true/1/yes/on
+    enabled: isTrue(process.env.POST_TO_EN),
   },
 ];
 
@@ -66,7 +66,6 @@ functions.http("postRandom", async (req, res) => {
     const bot = new Telegraf(BOT_TOKEN);
     const results = [];
 
-    // Постим отдельно в каждый канал
     for (const { id: channelId, lang } of CHANNELS) {
       console.log(`[postRandom] posting to channel ${channelId} lang=${lang}`);
 
