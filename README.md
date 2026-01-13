@@ -1,184 +1,59 @@
-# 🌿 EthnoPharma Cloud — AI-Powered Ethnobotany Pipeline (GCP, Cloud Run, Firestore)
+# 🌿 EthnoPharma Cloud — AI-Powered Ethnobotany Pipeline
 
-EthnoPharma Cloud is a fully automated AI-driven system for discovering, enriching and publishing ethnobotanical plant knowledge.  
-It runs 100% serverlessly on **Google Cloud Run**, uses **Firestore** as the main data store, and applies **OpenAI models** to generate structured bilingual content.
+EthnoPharma Cloud is a serverless, production-grade system for discovering, enriching, and publishing ethnobotanical plant cards to Telegram.
 
-This repository contains the production-grade, cleaned version of the system — designed for recruiters, engineers and collaborators.
+It runs on Google Cloud (Cloud Run + Firestore) and uses OpenAI models to generate structured bilingual content (RU / EN). Images are sourced and attributed via iNaturalist.
 
----
+This repository contains a cleaned, stable version of the project intended for professional review.
 
-## 🧩 Features
+## What the system does
 
-- **Autonomous plant discovery** (AI-based)
-- **Full enrichment pipeline** (sources → narrative → effects → image)
-- **Multilingual text generation (RU/EN)**
-- **Automatic posting to Telegram (via bot API)**
-- **ETL-style modular pipelines**
-- **Serverless execution via Cloud Run Jobs & Services**
-- **Firestore-based content state machine**
-- **Robust normalization, validation, safety rules**
-- **Image attribution via iNaturalist**
-- **Affiliate link auto-detection (iHerb etc.)**
-- **Clean, explicit, maintainable architecture**
+- AI-assisted discovery of ethnobotanical plant candidates
+- Modular enrichment pipeline (sources → narrative → effects → image → affiliate)
+- RU / EN bilingual content generation
+- Automated Telegram publishing via Bot API
+- Firestore-driven content lifecycle (status, posting history, cooldowns)
+- Safety and quality gates with strict normalization rules
 
----
+## High-level architecture
 
-# 📐 Architecture Overview
+- Firestore is the single source of truth
 
-```
-ethnopharma-cloud/
-│
-├── src_clean/
-│   ├── services/
-│   │   ├── discover-candidates-clean/    # Cloud Run Job — AI-based discovery of new plants
-│   │   └── post-random-clean/            # Cloud Run Service — daily posting to Telegram
-│   │
-│   ├── pipeline/                         # Full enrichment pipeline (local or Cloud Run)
-│   │   ├── steps/                        # 01–10 modular steps (find, fetch, enrich, pick image…)
-│   │   ├── services/                     # iNaturalist, affiliate search, image processing
-│   │   ├── utils/                        # normalization, validation, networking, metadata
-│   │   ├── config/                       # allowlists, vocabularies, schemas
-│   │   └── tools/                        # audit reports, HTML cleaning, file-safe operations
-│
-├── tools/                                # Repo-wide operational scripts
-│   ├── importCandidates.js
-│   ├── importEffects.js
-│   ├── import_cards_ready_to_firestore.js
-│   ├── updateCooldown.js
-│   ├── reconcile-candidates.js
-│   └── firestore_ping.mjs
-│
-└── Dockerfile                            # Cloud Run compatible image for services
-```
+  - `candidates` — newly discovered plants awaiting enrichment
+  - `cards` — fully enriched, publishable plant cards
 
----
+- Cloud Run services
 
-# 🚀 Deployment (Google Cloud Run)
+  - `discover-candidates-clean` — AI-based candidate discovery (Scheduler-triggered HTTP)
+  - `post-random-clean` — publishes ready cards to Telegram
 
-### **1. Build container**
+- Enrichment pipeline
+  - A modular ETL-style flow that transforms candidates into publishable cards
 
-```sh
-gcloud builds submit --tag gcr.io/$PROJECT_ID/post-random-clean
-```
+## Technology stack
 
-### **2. Deploy service (Telegram posting)**
-
-```sh
-gcloud run deploy post-random-clean \
-  --image gcr.io/$PROJECT_ID/post-random-clean \
-  --platform=managed \
-  --region=me-west1 \
-  --allow-unauthenticated
-```
-
-### **3. Deploy job (discover-candidates)**
-
-```sh
-gcloud run jobs deploy discover-candidates-clean \
-  --image gcr.io/$PROJECT_ID/discover-candidates-clean \
-  --region=me-west1
-```
-
-### **4. Cloud Scheduler example (daily 9:00)**
-
-```sh
-gcloud scheduler jobs create http telegram-daily \
-  --schedule="0 9 * * *" \
-  --uri="https://post-random-clean-xxxxx.run.app" \
-  --http-method=POST
-```
-
----
-
-# 🛠 Local Development
-
-### Install
-
-```sh
-npm install
-```
-
-### Run posting service locally
-
-```sh
-npm run dev:post
-```
-
-### Run candidate discovery locally
-
-```sh
-npm run dev:discover
-```
-
-### Required environment variables
-
-- `GOOGLE_APPLICATION_CREDENTIALS`
-- `BOT_TOKEN`
-- `CHANNEL_ID`
-- OpenAI API keys (pipeline / discovery)
-
----
-
-# 🧪 Pipeline Breakdown (7 Steps)
-
-Located in: **src_clean/pipeline/steps/**
-
-1. **01_findCandidates** — initial candidate detection
-2. **02_fetchSources** — scrape scientific & ethnobotanical sources
-3. **03_enrichNarrative** — generate bilingual narrative
-4. **04_extractEffects** — effect extraction (adaptogens, anxiolytics etc.)
-5. **05_pickImage** — iNaturalist image + attribution
-6. **06_affiliate** — detect/store affiliate links
-7. **08_qualityGate** — rule-based safety & quality checks
-
----
-
-# 🔧 Operational Tools
-
-Directory: `tools/`
-
-- `updateCooldown.js` — bulk update Firestore field `cooldownDays`
-- `importCandidates.js` / `importEffects.js` — bulk importers
-- `firestore_ping.mjs` — connection debugging
-- `reconcile-candidates.js` — detect inconsistencies
-
-These scripts simplify maintenance of large content volumes.
-
----
-
-# 📦 Technologies Used
-
-- Node.js 22
-- Google Cloud Run (Jobs + Services)
+- Node.js
+- Google Cloud Run (Services)
 - Firestore (Native mode)
 - Google Cloud Scheduler
-- Docker (Cloud Build)
-- OpenAI APIs
-- iNaturalist API
+- OpenAI API
+- iNaturalist (image sourcing and attribution)
 - Telegram Bot API
-- Modular ETL patterns
-- Bilingual content handling (RU/EN)
 
----
+## Professional context
 
-# 📌 Why This Project Matters (Professional Context)
+This project demonstrates practical experience with:
 
-This repository demonstrates practical experience with:
+- serverless cloud architecture
+- asynchronous orchestration
+- modular ETL-style pipelines
+- Firestore data modeling
+- AI-assisted content generation
+- multilingual text processing
+- production-grade automation and deployment
 
-- serverless cloud architecture,
-- asynchronous job orchestration,
-- modular ETL-style pipelines,
-- Firestore data modeling,
-- AI-assisted content generation,
-- production-grade deployment with Cloud Run,
-- robust multilingual text processing,
-- high-volume automated content publishing,
-- clean and maintainable codebase.
+Designed for long-term stability and maintainability.
 
-Designed for scalability and long-term maintainability.
-
----
-
-# 📄 License
+## License
 
 MIT

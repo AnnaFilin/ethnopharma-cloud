@@ -287,7 +287,7 @@ function formatSources(card) {
 
 /**
  * Build Telegram photo caption:
- * - Only Summary/Кратко… (if present) + tags
+ * - Only Summary (if present) + tags
  * - Max length 1024, smart trimming
  */
 export function buildCaption(card, lang = DEFAULT_LANG) {
