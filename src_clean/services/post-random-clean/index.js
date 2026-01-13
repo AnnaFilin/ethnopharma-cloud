@@ -3,7 +3,7 @@
 import functions from "@google-cloud/functions-framework";
 import { Telegraf } from "telegraf";
 
-import { loadCards } from "./src/sheets.js";         
+import { loadCards } from "./src/sheets.js";
 import { postOnce } from "./src/core/postOnce.js";
 import { postCardImageAndText } from "./src/posting/postCard.js";
 
@@ -13,11 +13,40 @@ if (!getApps().length) {
   initializeApp({ credential: applicationDefault() });
 }
 
-
 // Env
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CHAT_ID   = process.env.CHANNEL_ID;
-const POST_LANG = (process.env.POST_LANG || "ru").toLowerCase();
+
+// Helpers for env flags
+function isTrue(value) {
+  if (!value) return false;
+  const v = String(value).trim().toLowerCase();
+  return v === "true" || v === "1" || v === "yes" || v === "on";
+}
+
+function isNotFalse(value) {
+  if (!value) return true; // по умолчанию: включено
+  const v = String(value).trim().toLowerCase();
+  return v !== "false" && v !== "0" && v !== "no" && v !== "off";
+}
+
+// Raw channels config from env
+const RAW_CHANNELS = [
+  {
+    id: process.env.CHANNEL_ID_RU,
+    lang: "ru",
+    enabled: isNotFalse(process.env.POST_TO_RU), // если не задано — true
+  },
+  {
+    id: process.env.CHANNEL_ID_EN,
+    lang: "en",
+    enabled: isTrue(process.env.POST_TO_EN), // включится, только если явно true/1/yes/on
+  },
+];
+
+const CHANNELS = RAW_CHANNELS.filter((ch) => ch.id && ch.enabled);
+
+console.log("[postRandom] channels config:", RAW_CHANNELS);
+console.log("[postRandom] active channels:", CHANNELS);
 
 // HTTP handler
 functions.http("postRandom", async (req, res) => {
@@ -25,19 +54,37 @@ functions.http("postRandom", async (req, res) => {
     if (req.method !== "POST") {
       return res.status(405).json({ ok: false, error: "Use POST" });
     }
-    if (!BOT_TOKEN) throw new Error("BOT_TOKEN is missing");
-    if (!CHAT_ID)   throw new Error("CHANNEL_ID is missing");
+    if (!BOT_TOKEN) {
+      throw new Error("BOT_TOKEN is missing");
+    }
+    if (!CHANNELS.length) {
+      throw new Error(
+        "No channels configured (check CHANNEL_ID_RU / CHANNEL_ID_EN and POST_TO_RU / POST_TO_EN)"
+      );
+    }
 
     const bot = new Telegraf(BOT_TOKEN);
+    const results = [];
 
-    const result = await postOnce({
-      load: () => loadCards(),                            
-      channelId: CHAT_ID,
-      lang: POST_LANG,
-      send: (card) => postCardImageAndText(bot, CHAT_ID, card, POST_LANG),
-    });
+    // Постим отдельно в каждый канал
+    for (const { id: channelId, lang } of CHANNELS) {
+      console.log(`[postRandom] posting to channel ${channelId} lang=${lang}`);
 
-    return res.status(200).json({ ok: true, ...result });
+      const result = await postOnce({
+        load: () => loadCards(),
+        channelId,
+        lang,
+        send: (card) => postCardImageAndText(bot, channelId, card, lang),
+      });
+
+      results.push({
+        channelId,
+        lang,
+        ...result,
+      });
+    }
+
+    return res.status(200).json({ ok: true, results });
   } catch (e) {
     console.error("postRandom error:", e);
     return res.status(500).json({ ok: false, error: String(e?.message || e) });
@@ -45,4 +92,5 @@ functions.http("postRandom", async (req, res) => {
 });
 
 // Export
-export const postRandom = async (req, res) => functions.get("postRandom")(req, res);
+export const postRandom = async (req, res) =>
+  functions.get("postRandom")(req, res);
