@@ -14,14 +14,17 @@ let VOCAB_LOAD_STARTED = false;
  * Safe to call multiple times; runs only once per process.
  */
 
-
 function warmEffectsVocabOnce() {
   if (VOCAB_LOAD_STARTED || DISABLE_EFFECTS) return;
   VOCAB_LOAD_STARTED = true;
 
   let db;
   try {
-    const { initializeApp, getApps, applicationDefault } = require("firebase-admin/app");
+    const {
+      initializeApp,
+      getApps,
+      applicationDefault,
+    } = require("firebase-admin/app");
     const { getFirestore } = require("firebase-admin/firestore");
 
     if (!getApps().length) {
@@ -31,7 +34,7 @@ function warmEffectsVocabOnce() {
     db = getFirestore();
   } catch (err) {
     console.warn("[effects] Firebase not ready yet:", err?.message || err);
-    VOCAB_LOAD_STARTED = false; 
+    VOCAB_LOAD_STARTED = false;
     return;
   }
 
@@ -46,14 +49,20 @@ function warmEffectsVocabOnce() {
       });
       EFFECTS_VOCAB = acc;
       VOCAB_READY = true;
-      console.log(`[effects] loaded ${Object.keys(EFFECTS_VOCAB).length} records from Firestore`);
+      console.log(
+        `[effects] loaded ${
+          Object.keys(EFFECTS_VOCAB).length
+        } records from Firestore`
+      );
     })
     .catch((err) => {
-      console.warn("[effects] failed to load from Firestore:", err?.message || err);
+      console.warn(
+        "[effects] failed to load from Firestore:",
+        err?.message || err
+      );
       VOCAB_LOAD_STARTED = false;
     });
 }
-
 
 // Kick off async warm-up on module load (non-blocking)
 warmEffectsVocabOnce();
@@ -90,8 +99,16 @@ function heading(key, lang = DEFAULT_LANG) {
   const map = {
     summary: { ru: "Кратко", en: "Summary", he: "תקציר" },
     ethnobotany: { ru: "Этноботаника", en: "Ethnobotany", he: "אתנובוטניקה" },
-    modern_evidence: { ru: "Современные данные", en: "Modern evidence", he: "עדויות עכשוויות" },
-    interesting_fact: { ru: "Интересный факт", en: "Interesting fact", he: "עובדה מעניינת" },
+    modern_evidence: {
+      ru: "Современные данные",
+      en: "Modern evidence",
+      he: "עדויות עכשוויות",
+    },
+    interesting_fact: {
+      ru: "Интересный факт",
+      en: "Interesting fact",
+      he: "עובדה מעניינת",
+    },
     context: { ru: "Контекст", en: "Context", he: "הקשר" },
     safety: { ru: "Безопасность", en: "Safety", he: "בטיחות" },
     sources: { ru: "Источники", en: "Sources", he: "מקורות" },
@@ -132,7 +149,11 @@ function normalizeKey(key) {
  */
 function resolveEffectLabel(effectItem, lang = DEFAULT_LANG) {
   // Accept pre-localized object
-  if (effectItem && typeof effectItem === "object" && !Array.isArray(effectItem)) {
+  if (
+    effectItem &&
+    typeof effectItem === "object" &&
+    !Array.isArray(effectItem)
+  ) {
     const txt = pickLang(effectItem, lang);
     if (txt) return txt;
   }
@@ -175,7 +196,10 @@ function resolveEffectLabel(effectItem, lang = DEFAULT_LANG) {
       missingLogged = true;
       setTimeout(() => {
         const list = Array.from(MISSING_EFFECT_KEYS).join(", ");
-        console.warn("[effects][missing keys] Add to effects_vocab (Firestore):", list);
+        console.warn(
+          "[effects][missing keys] Add to effects_vocab (Firestore):",
+          list
+        );
       }, 0);
     }
   }
@@ -214,16 +238,27 @@ function formatTitleLine(card, lang = DEFAULT_LANG) {
 
 // ---- Affiliate / Sources ----
 function formatAffiliate(card, lang = DEFAULT_LANG) {
-  const url = card?.affiliate?.product_url || card?.affiliate?.url || "";
-  if (!url) return "";
+  const productUrl = card?.affiliate?.product_url || "";
+  const isConcreteProduct =
+    typeof productUrl === "string" && productUrl.includes("/pr/");
+
+  if (!isConcreteProduct) return "";
 
   const label =
-    lang === "ru" ? "Партнёрская ссылка" : lang === "he" ? "קישור שותפים" : "Affiliate link";
+    lang === "ru"
+      ? "Партнёрская ссылка"
+      : lang === "he"
+      ? "קישור שותפים"
+      : "Affiliate link";
 
   const text =
-    lang === "ru" ? "Купить на iHerb" : lang === "he" ? "לקנות ב-iHerb" : "Buy on iHerb";
+    lang === "ru"
+      ? "Купить на iHerb"
+      : lang === "he"
+      ? "לקנות ב-iHerb"
+      : "Buy on iHerb";
 
-  return `<b>${esc(label)}:</b> <a href="${esc(url)}">${esc(text)}</a>`;
+  return `<b>${esc(label)}:</b> <a href="${esc(productUrl)}">${esc(text)}</a>`;
 }
 
 function formatSources(card) {
@@ -257,8 +292,11 @@ function formatSources(card) {
  */
 export function buildCaption(card, lang = DEFAULT_LANG) {
   const summary = pickLang(card?.summary || {}, lang);
-  const summaryLabel = lang === "ru" ? "Кратко" : lang === "he" ? "תקציר" : "Summary";
-  const summaryLine = summary ? `<b>${esc(summaryLabel)}:</b> ${esc(summary)}` : "";
+  const summaryLabel =
+    lang === "ru" ? "Кратко" : lang === "he" ? "תקציר" : "Summary";
+  const summaryLine = summary
+    ? `<b>${esc(summaryLabel)}:</b> ${esc(summary)}`
+    : "";
 
   const tags = getTagsForLang(card?.tags, lang);
   const tagsLine = tags.length ? esc(tags.join(" ")) : "";
@@ -269,8 +307,13 @@ export function buildCaption(card, lang = DEFAULT_LANG) {
     if (summaryLine) {
       const tail = [tagsLine].filter(Boolean).join("\n");
       const remaining = 1024 - (tail.length + (tail ? 1 : 0));
-      const trimmedSummary = trimToLimitNoMidWord(summary.replace(/^\s+/, ""), Math.max(0, remaining));
-      const newSummaryLine = `<b>${esc(summaryLabel)}:</b> ${esc(trimmedSummary)}`;
+      const trimmedSummary = trimToLimitNoMidWord(
+        summary.replace(/^\s+/, ""),
+        Math.max(0, remaining)
+      );
+      const newSummaryLine = `<b>${esc(summaryLabel)}:</b> ${esc(
+        trimmedSummary
+      )}`;
       caption = [newSummaryLine, tail].filter(Boolean).join("\n");
     }
     if (caption.length > 1024) {
