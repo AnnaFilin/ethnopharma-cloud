@@ -91,6 +91,13 @@ This repository documents a working production system focused on:
 
 It is not a chatbot and not a real-time service.
 
+## Live output
+
+The system publishes its output to Telegram channels:
+
+- English: https://t.me/ethnopharma_ethnobotany
+- Russian: https://t.me/ethnopharma
+
 ## Possible extensions
 
 Although the current implementation focuses on ethnobotanical data, the underlying approach is domain-agnostic.
